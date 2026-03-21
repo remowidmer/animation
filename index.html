@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Embedding Visualizer — 3D Point Cloud</title>
+  <meta name="description" content="Interactive 3D visualization of high-dimensional embeddings using PCA and t-SNE projections." />
+  <link rel="stylesheet" href="/index.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div id="loading-overlay">
+    <div class="loader-content">
+      <div class="loader-ring"></div>
+      <div class="loader-text">Computing projections<span class="dots"></span></div>
+      <div class="loader-status" id="loading-status">Generating embeddings…</div>
+    </div>
+  </div>
+
+  <div id="tooltip" class="tooltip hidden">
+    <div class="tooltip-label"></div>
+    <div class="tooltip-meta"></div>
+  </div>
+
+  <div id="info-bar">
+    <span id="point-count"></span>
+    <span id="current-projection"></span>
+    <span id="fps-counter"></span>
+  </div>
+
+  <canvas id="canvas"></canvas>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+{
+  "name": "animation",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^8.0.1"
+  },
+  "dependencies": {
+    "lil-gui": "^0.21.0",
+    "ml-matrix": "^6.12.1",
+    "three": "^0.183.2",
+    "tsne-js": "^1.0.3",
+    "umap-js": "^1.4.0"
+  }
+}
