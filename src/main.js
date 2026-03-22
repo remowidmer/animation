@@ -50,6 +50,7 @@ async function init() {
       autoRotate: true,
       autoRotateSpeed: 1.0,
       autoZoom: true,
+      discColorMode: 'Angle',
       plumeEnabled: false,
       plumeRadius: 0.0,
       plumeWidth: 5.0,
@@ -84,7 +85,7 @@ async function init() {
     const sphericalPositions = generateSphericalLayout(NUM_POINTS);
     const cubicGridPositions = generateCubicGridLayout(NUM_POINTS, clusterIds, numClusters);
     const hexGridPositions = generateHexGridLayout(NUM_POINTS, clusterIds, numClusters);
-    const circleGrid = generateCircleGridLayout(NUM_POINTS, guiConfig.colorscale);
+    const circleGrid = generateCircleGridLayout(NUM_POINTS, guiConfig.colorscale, guiConfig.discColorMode);
 
     // Flatten original cluster colors to be the base colors
     const baseColors = new Float32Array(NUM_POINTS * 3);
@@ -189,8 +190,8 @@ async function init() {
           layoutManager.baseColors[i * 3 + 2] = c[2];
         }
 
-        // Regenerate Circle Grid with continuous palette
-        const circleLayout = generateCircleGridLayout(NUM_POINTS, name);
+        // Regenerate Circle Grid with continuous palette (respecting current mode)
+        const circleLayout = generateCircleGridLayout(NUM_POINTS, name, guiConfig.discColorMode);
         layoutManager.addLayout('Disc', circleLayout.positions, circleLayout.colors);
 
         // Re-apply shifted colors to all UMAP layouts
@@ -236,6 +237,13 @@ async function init() {
         }
       },
       onTransitionSpeedChange: (v) => { animator.transitionSpeed = v; },
+      onDiscColorModeChange: (v) => {
+        const circleGrid = generateCircleGridLayout(NUM_POINTS, guiConfig.colorscale, v);
+        layoutManager.addLayout('Disc', circleGrid.positions, circleGrid.colors);
+        if (layoutManager.currentLayout === 'Disc') {
+            switchProjection('Disc');
+        }
+      },
       onPlumeToggle: (v) => {
         material.uniforms.uPlumeEnabled.value = (v && layoutManager.currentLayout === 'Disc') ? 1.0 : 0.0;
         if (v && layoutManager.currentLayout === 'Disc') animator.triggerPlumeAnimation();

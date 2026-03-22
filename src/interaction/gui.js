@@ -45,15 +45,18 @@ export function createGUI(config, callbacks) {
     .name('Transition Speed (s)')
     .onChange(callbacks.onTransitionSpeedChange);
 
-  // Disc Plume settings
-  const plumeFolder = gui.addFolder('Disc Plume');
-  plumeFolder.add(config, 'plumeEnabled')
+  // Disc Settings
+  const discFolder = gui.addFolder('Disc Settings');
+  discFolder.add(config, 'discColorMode', ['Angle', 'Z-Surface'])
+    .name('Color Map')
+    .onChange(callbacks.onDiscColorModeChange);
+  discFolder.add(config, 'plumeEnabled')
     .name('Enable Plume')
     .onChange(callbacks.onPlumeToggle);
-  plumeFolder.add(config, 'plumeRadius', 0.0, 30.0, 0.1)
+  discFolder.add(config, 'plumeRadius', 0.0, 30.0, 0.1)
     .name('Plume Radius')
     .onChange(callbacks.onPlumeRadiusChange).listen();
-  plumeFolder.add(config, 'plumeWidth', 0.1, 10.0, 0.1)
+  discFolder.add(config, 'plumeWidth', 0.1, 10.0, 0.1)
     .name('Plume Width')
     .onChange(callbacks.onPlumeWidthChange);
 
