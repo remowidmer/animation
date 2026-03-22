@@ -50,10 +50,18 @@ async function init() {
       autoRotate: true,
       autoRotateSpeed: 1.0,
       autoZoom: true,
-      discColorMode: 'Angle',
-      plumeEnabled: false,
-      plumeRadius: 0.0,
-      plumeWidth: 5.0,
+      discColorMode: 'Z-Surface',
+      zSweepEnabled: false,
+      zSweepThresh: 1.0,
+      zSweepWidth: 0.1,
+      polyConfig: {
+        a: 26.549,
+        x: -0.2876,
+        y: -0.2696,
+        xx: -0.0004606,
+        yy: 0.0002108,
+        xy: 0.005996
+      },
       cycleEnabled: true,
       cyclePreset: 'Custom',
       cycleDuration: 2.0,
@@ -85,7 +93,7 @@ async function init() {
     const sphericalPositions = generateSphericalLayout(NUM_POINTS);
     const cubicGridPositions = generateCubicGridLayout(NUM_POINTS, clusterIds, numClusters);
     const hexGridPositions = generateHexGridLayout(NUM_POINTS, clusterIds, numClusters);
-    const circleGrid = generateCircleGridLayout(NUM_POINTS, guiConfig.colorscale, guiConfig.discColorMode);
+    const circleGrid = generateCircleGridLayout(NUM_POINTS, guiConfig.colorscale, guiConfig.discColorMode, guiConfig.polyConfig);
 
     // Flatten original cluster colors to be the base colors
     const baseColors = new Float32Array(NUM_POINTS * 3);
@@ -119,6 +127,10 @@ async function init() {
     );
     scene.add(points);
 
+    // Provide initial Z-Surface bounds naturally to shader
+    material.uniforms.uMinZ.value = circleGrid.minZ !== undefined ? circleGrid.minZ : 0.0;
+    material.uniforms.uMaxZ.value = circleGrid.maxZ !== undefined ? circleGrid.maxZ : 1.0;
+
     // 6. Animator
     const animator = new Animator(renderer, scene, camera, controls, geometry, material);
 
@@ -139,10 +151,10 @@ async function init() {
       animator.transitionTo(layout, layoutManager.baseColors);
       projectionEl.textContent = name;
       
-      // Plume is exclusively for Disc
-      material.uniforms.uPlumeEnabled.value = (guiConfig.plumeEnabled && name === 'Disc') ? 1.0 : 0.0;
-      if (guiConfig.plumeEnabled && name === 'Disc') {
-        animator.triggerPlumeAnimation();
+      // Z-Sweep is exclusively for Disc
+      material.uniforms.uZSweepEnabled.value = (guiConfig.zSweepEnabled && name === 'Disc') ? 1.0 : 0.0;
+      if (guiConfig.zSweepEnabled && name === 'Disc') {
+        animator.triggerZSweepAnimation();
       }
     }
 
@@ -191,8 +203,10 @@ async function init() {
         }
 
         // Regenerate Circle Grid with continuous palette (respecting current mode)
-        const circleLayout = generateCircleGridLayout(NUM_POINTS, name, guiConfig.discColorMode);
+        const circleLayout = generateCircleGridLayout(NUM_POINTS, name, guiConfig.discColorMode, guiConfig.polyConfig);
         layoutManager.addLayout('Disc', circleLayout.positions, circleLayout.colors);
+        material.uniforms.uMinZ.value = circleLayout.minZ;
+        material.uniforms.uMaxZ.value = circleLayout.maxZ;
 
         // Re-apply shifted colors to all UMAP layouts
         for (const lname of layoutManager.getNames()) {
@@ -238,18 +252,37 @@ async function init() {
       },
       onTransitionSpeedChange: (v) => { animator.transitionSpeed = v; },
       onDiscColorModeChange: (v) => {
-        const circleGrid = generateCircleGridLayout(NUM_POINTS, guiConfig.colorscale, v);
+        const circleGrid = generateCircleGridLayout(NUM_POINTS, guiConfig.colorscale, v, guiConfig.polyConfig);
         layoutManager.addLayout('Disc', circleGrid.positions, circleGrid.colors);
+        material.uniforms.uMinZ.value = circleGrid.minZ;
+        material.uniforms.uMaxZ.value = circleGrid.maxZ;
         if (layoutManager.currentLayout === 'Disc') {
             switchProjection('Disc');
         }
       },
-      onPlumeToggle: (v) => {
-        material.uniforms.uPlumeEnabled.value = (v && layoutManager.currentLayout === 'Disc') ? 1.0 : 0.0;
-        if (v && layoutManager.currentLayout === 'Disc') animator.triggerPlumeAnimation();
+      onZSweepToggle: (v) => {
+        material.uniforms.uZSweepEnabled.value = (v && layoutManager.currentLayout === 'Disc') ? 1.0 : 0.0;
+        if (v && layoutManager.currentLayout === 'Disc') animator.triggerZSweepAnimation();
       },
-      onPlumeRadiusChange: (v) => { material.uniforms.uPlumeRadius.value = v; },
-      onPlumeWidthChange: (v) => { material.uniforms.uPlumeWidth.value = v; },
+      onZSweepThreshChange: (v) => { material.uniforms.uZSweepThresh.value = v; },
+      onZSweepWidthChange: (v) => { material.uniforms.uZSweepWidth.value = v; },
+      onPolyChange: () => {
+        const circleGrid = generateCircleGridLayout(NUM_POINTS, guiConfig.colorscale, guiConfig.discColorMode, guiConfig.polyConfig);
+        layoutManager.addLayout('Disc', circleGrid.positions, circleGrid.colors);
+        
+        material.uniforms.uPolyA.value = guiConfig.polyConfig.a;
+        material.uniforms.uPolyX.value = guiConfig.polyConfig.x;
+        material.uniforms.uPolyY.value = guiConfig.polyConfig.y;
+        material.uniforms.uPolyXX.value = guiConfig.polyConfig.xx;
+        material.uniforms.uPolyYY.value = guiConfig.polyConfig.yy;
+        material.uniforms.uPolyXY.value = guiConfig.polyConfig.xy;
+        material.uniforms.uMinZ.value = circleGrid.minZ;
+        material.uniforms.uMaxZ.value = circleGrid.maxZ;
+
+        if (layoutManager.currentLayout === 'Disc') {
+            switchProjection('Disc');
+        }
+      },
       onAutoRotateChange: (v) => {
         animator.customAutoRotate = v;
         controls.autoRotate = false; // Disable native flat Y-spin
@@ -316,9 +349,20 @@ async function init() {
       animator.cycleDuration = guiConfig.cycleDuration;
       animator.currentLayoutName = 'PCA';
 
-      material.uniforms.uPlumeEnabled.value = (guiConfig.plumeEnabled && guiConfig.projection === 'Disc') ? 1.0 : 0.0;
-      material.uniforms.uPlumeRadius.value = guiConfig.plumeRadius;
-      material.uniforms.uPlumeWidth.value = guiConfig.plumeWidth;
+      material.uniforms.uZSweepEnabled.value = (guiConfig.zSweepEnabled && guiConfig.projection === 'Disc') ? 1.0 : 0.0;
+      material.uniforms.uZSweepThresh.value = guiConfig.zSweepThresh;
+      material.uniforms.uZSweepWidth.value = guiConfig.zSweepWidth;
+      
+      material.uniforms.uPolyA.value = guiConfig.polyConfig.a;
+      material.uniforms.uPolyX.value = guiConfig.polyConfig.x;
+      material.uniforms.uPolyY.value = guiConfig.polyConfig.y;
+      material.uniforms.uPolyXX.value = guiConfig.polyConfig.xx;
+      material.uniforms.uPolyYY.value = guiConfig.polyConfig.yy;
+      material.uniforms.uPolyXY.value = guiConfig.polyConfig.xy;
+      
+      // Provide initial Z-Surface bounds naturally to shader
+      material.uniforms.uMinZ.value = circleGrid.minZ !== undefined ? circleGrid.minZ : 0.0;
+      material.uniforms.uMaxZ.value = circleGrid.maxZ !== undefined ? circleGrid.maxZ : 1.0;
 
       rebuildCycleList();
     };

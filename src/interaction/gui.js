@@ -50,15 +50,24 @@ export function createGUI(config, callbacks) {
   discFolder.add(config, 'discColorMode', ['Angle', 'Z-Surface'])
     .name('Color Map')
     .onChange(callbacks.onDiscColorModeChange);
-  discFolder.add(config, 'plumeEnabled')
-    .name('Enable Plume')
-    .onChange(callbacks.onPlumeToggle);
-  discFolder.add(config, 'plumeRadius', 0.0, 30.0, 0.1)
-    .name('Plume Radius')
-    .onChange(callbacks.onPlumeRadiusChange).listen();
-  discFolder.add(config, 'plumeWidth', 0.1, 10.0, 0.1)
-    .name('Plume Width')
-    .onChange(callbacks.onPlumeWidthChange);
+  discFolder.add(config, 'zSweepEnabled')
+    .name('Enable Z Sweep')
+    .onChange(callbacks.onZSweepToggle);
+  discFolder.add(config, 'zSweepThresh', 0.0, 1.0, 0.01)
+    .name('Z Threshold')
+    .onChange(callbacks.onZSweepThreshChange).listen();
+  discFolder.add(config, 'zSweepWidth', 0.01, 0.5, 0.01)
+    .name('Z Sweep Width')
+    .onChange(callbacks.onZSweepWidthChange);
+
+  const polyFolder = discFolder.addFolder('Z-Surface Polynomial');
+  polyFolder.add(config.polyConfig, 'a', 0.0, 50.0).name('Intercept').onChange(callbacks.onPolyChange);
+  polyFolder.add(config.polyConfig, 'x', -1.0, 1.0).name('X').onChange(callbacks.onPolyChange);
+  polyFolder.add(config.polyConfig, 'y', -1.0, 1.0).name('Y').onChange(callbacks.onPolyChange);
+  polyFolder.add(config.polyConfig, 'xx', -0.01, 0.01).name('X²').onChange(callbacks.onPolyChange);
+  polyFolder.add(config.polyConfig, 'yy', -0.01, 0.01).name('Y²').onChange(callbacks.onPolyChange);
+  polyFolder.add(config.polyConfig, 'xy', -0.05, 0.05).name('XY').onChange(callbacks.onPolyChange);
+  discFolder.close();
 
   // Camera
   const camera = gui.addFolder('Camera');

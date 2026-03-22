@@ -242,7 +242,7 @@ export function generateCircleGridLayout(n, paletteName = 'plotly', colorMode = 
     }
   }
 
-  return { positions, colors };
+  return { positions, colors, minZ, maxZ, zVals };
 }
 
 /**
