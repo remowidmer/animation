@@ -8,7 +8,6 @@ import * as THREE from 'three';
 import { createScene } from './renderer/scene.js';
 import { createPointCloud } from './renderer/pointCloud.js';
 import { createControls } from './renderer/controls.js';
-import { createKNNEdges } from './renderer/knnEdges.js';
 import { LayoutManager, generateRandomLayout, generateSphericalLayout, generateCubicGridLayout, generateHexGridLayout, generateCircleGridLayout } from './animation/layoutManager.js';
 import { Animator } from './animation/animator.js';
 import { createGUI } from './interaction/gui.js';
@@ -48,13 +47,12 @@ async function init() {
       umapNeighbors: 15,
       umapColorMorph: false,
       transitionSpeed: 1.5,
-      showEdges: false,
-      edgeThickness: 0.5,
-      edgeOpacity: 0.4,
-      edgeColorMode: 'Gradient',
       autoRotate: true,
       autoRotateSpeed: 1.0,
       autoZoom: true,
+      plumeEnabled: false,
+      plumeRadius: 0.0,
+      plumeWidth: 5.0,
       cycleEnabled: true,
       cyclePreset: 'Custom',
       cycleDuration: 2.0,
@@ -120,23 +118,8 @@ async function init() {
     );
     scene.add(points);
 
-    // 6. k-NN edges
-    const knnEdges = createKNNEdges(scene, NUM_POINTS);
-
-    // 7. Animator
+    // 6. Animator
     const animator = new Animator(renderer, scene, camera, controls, geometry, material);
-    animator.setKNNEdges(knnEdges);
-
-    animator.edgeUpdateCallback = () => {
-      // Re-compute topology (which point connects to which) only once at transition start
-      if (knnEdges.mesh.visible) {
-        const pos = geometry.getAttribute('position').array;
-        const col = geometry.getAttribute('aColor').array;
-        const targetPos = geometry.getAttribute('aTargetPosition').array;
-        
-        knnEdges.update(pos, col, targetPos);
-      }
-    };
 
     animator.fpsCallback = (fps) => {
       fpsCounterEl.textContent = `${fps} FPS`;
@@ -154,6 +137,12 @@ async function init() {
       animator.currentLayoutName = name;
       animator.transitionTo(layout, layoutManager.baseColors);
       projectionEl.textContent = name;
+      
+      // Plume is exclusively for Disc
+      material.uniforms.uPlumeEnabled.value = (guiConfig.plumeEnabled && name === 'Disc') ? 1.0 : 0.0;
+      if (guiConfig.plumeEnabled && name === 'Disc') {
+        animator.triggerPlumeAnimation();
+      }
     }
 
     function rebuildCycleList() {
@@ -247,20 +236,12 @@ async function init() {
         }
       },
       onTransitionSpeedChange: (v) => { animator.transitionSpeed = v; },
-      onShowEdgesChange: (visible) => {
-        knnEdges.setVisible(visible);
-        if (visible) {
-          const pos = geometry.getAttribute('position').array;
-          const col = geometry.getAttribute('aColor').array;
-          const targetPos = geometry.getAttribute('aTargetPosition').array;
-          knnEdges.update(pos, col, targetPos);
-        }
+      onPlumeToggle: (v) => {
+        material.uniforms.uPlumeEnabled.value = (v && layoutManager.currentLayout === 'Disc') ? 1.0 : 0.0;
+        if (v && layoutManager.currentLayout === 'Disc') animator.triggerPlumeAnimation();
       },
-      onEdgeThicknessChange: (v) => { knnEdges.material.uniforms.uThickness.value = v; },
-      onEdgeOpacityChange: (v) => { knnEdges.material.uniforms.uOpacity.value = v; },
-      onEdgeColorModeChange: (v) => {
-        knnEdges.material.uniforms.uColorMode.value = (v === 'Gradient') ? 1.0 : 0.0;
-      },
+      onPlumeRadiusChange: (v) => { material.uniforms.uPlumeRadius.value = v; },
+      onPlumeWidthChange: (v) => { material.uniforms.uPlumeWidth.value = v; },
       onAutoRotateChange: (v) => {
         animator.customAutoRotate = v;
         controls.autoRotate = false; // Disable native flat Y-spin
@@ -303,6 +284,7 @@ async function init() {
     projectionEl.textContent = 'PCA';
 
     // 10. Start
+    animator.setGuiConfig(guiConfig);
     animator.start();
 
     // 11. Fade overlay
@@ -325,11 +307,10 @@ async function init() {
       animator.autoCycle = guiConfig.cycleEnabled;
       animator.cycleDuration = guiConfig.cycleDuration;
       animator.currentLayoutName = 'PCA';
-      
-      // Sync edge material to guiConfig
-      knnEdges.material.uniforms.uThickness.value = guiConfig.edgeThickness;
-      knnEdges.material.uniforms.uOpacity.value = guiConfig.edgeOpacity;
-      knnEdges.material.uniforms.uColorMode.value = (guiConfig.edgeColorMode === 'Gradient') ? 1.0 : 0.0;
+
+      material.uniforms.uPlumeEnabled.value = (guiConfig.plumeEnabled && guiConfig.projection === 'Disc') ? 1.0 : 0.0;
+      material.uniforms.uPlumeRadius.value = guiConfig.plumeRadius;
+      material.uniforms.uPlumeWidth.value = guiConfig.plumeWidth;
 
       rebuildCycleList();
     };

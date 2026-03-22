@@ -59,9 +59,11 @@ export class Animator {
     this.onFrame = null;
     this.onTransitionComplete = null;
 
-    // Edge update callback
-    this.edgeUpdateCallback = null;
-    this.knnEdges = null;
+    // Plume Animation
+    this.guiConfig = null;
+    this.plumeAnimating = false;
+    this.plumeProgress = 0.0;
+    this.plumeDuration = 2.0;
 
     // Color transitions option
     this.colorTransitions = true;
@@ -94,6 +96,24 @@ export class Animator {
     this._loop();
   }
 
+  setGuiConfig(config) {
+    this.guiConfig = config;
+  }
+
+  triggerPlumeAnimation() {
+    this.plumeAnimating = true;
+    this.plumeProgress = 0.0;
+  }
+
+  setGuiConfig(config) {
+    this.guiConfig = config;
+  }
+
+  triggerPlumeAnimation() {
+    this.plumeAnimating = true;
+    this.plumeProgress = 0.0;
+  }
+
   transitionTo(layout, baseColors) {
     let colors = null;
 
@@ -115,13 +135,6 @@ export class Animator {
     // Initialize transition
     this.isTransitioning = true;
     this.transitionProgress = 0;
-
-    // Trigger one-time edge topology update at transition start
-    if (this.edgeUpdateCallback) this.edgeUpdateCallback();
-  }
-
-  setKNNEdges(knnEdges) {
-    this.knnEdges = knnEdges;
   }
 
   _loop() {
@@ -134,6 +147,20 @@ export class Animator {
 
     // Update time uniform
     this.material.uniforms.uTime.value = elapsed;
+
+    // Plume Animation
+    if (this.plumeAnimating) {
+      this.plumeProgress += dt / this.plumeDuration;
+      if (this.plumeProgress >= 1.0) {
+        this.plumeProgress = 1.0;
+        this.plumeAnimating = false;
+      }
+      const currentRadius = this.plumeProgress * 30.0;
+      if (this.guiConfig) {
+        this.guiConfig.plumeRadius = currentRadius;
+      }
+      this.material.uniforms.uPlumeRadius.value = currentRadius;
+    }
 
     // Handle transition
     if (this.isTransitioning) {
@@ -148,15 +175,9 @@ export class Animator {
       const lerpFactor = Math.min(easedT * 0.15 + 0.02, 0.2);
       lerpPositions(this.geometry, lerpFactor);
 
-      // Sync edges with GPU progress
-      if (this.knnEdges) {
-        this.knnEdges.material.uniforms.uTransitionProgress.value = easedT;
-      }
-
       if (!this.isTransitioning && this.onTransitionComplete) {
         lerpPositions(this.geometry, 1.0);
         this.onTransitionComplete();
-        if (this.edgeUpdateCallback) this.edgeUpdateCallback();
       }
     }
 

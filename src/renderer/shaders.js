@@ -13,6 +13,7 @@ export const vertexShader = /* glsl */ `
   attribute float aPointId;
 
   varying vec3  vColor;
+  varying vec3  vPos;
 
   void main() {
     vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
@@ -25,13 +26,19 @@ export const vertexShader = /* glsl */ `
     gl_PointSize = clamp(attenuatedSize, 1.0, 48.0);
 
     vColor = aColor;
+    vPos = position;
   }
 `;
 
 export const fragmentShader = /* glsl */ `
   uniform float uOpacity;
+  uniform float uPlumeEnabled;
+  uniform float uPlumeRadius;
+  uniform float uPlumeWidth;
+  uniform vec2 uPlumeCenter;
 
   varying vec3  vColor;
+  varying vec3  vPos;
 
   void main() {
     vec2 center = gl_PointCoord - vec2(0.5);
@@ -39,12 +46,20 @@ export const fragmentShader = /* glsl */ `
 
     // Crisp circle
     float alpha = 1.0 - smoothstep(0.35, 0.5, dist);
-
     alpha *= uOpacity;
 
     if (alpha < 0.01) discard;
 
+    vec3 finalColor = vColor;
+
+    if (uPlumeEnabled > 0.5) {
+        float r = distance(vPos.xy, uPlumeCenter);
+        float plumeAlpha = 1.0 - smoothstep(uPlumeRadius - uPlumeWidth, uPlumeRadius, r);
+        vec3 grey = vec3(0.3, 0.3, 0.3);
+        finalColor = mix(grey, finalColor, plumeAlpha);
+    }
+
     // Apply basic color and alpha
-    gl_FragColor = vec4(vColor, alpha);
+    gl_FragColor = vec4(finalColor, alpha);
   }
 `;

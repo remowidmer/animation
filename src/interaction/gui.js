@@ -16,7 +16,7 @@ export function createGUI(config, callbacks) {
   visual.add(config, 'colorscale', ['plotly', 'plasma'])
     .name('Colorscale')
     .onChange(callbacks.onColorscaleChange);
-  visual.add(config, 'pointSize', 0.1, 10.0, 0.1)
+  visual.add(config, 'pointSize', 0.1, 1.0, 0.05)
     .name('Point Size')
     .onChange(callbacks.onPointSizeChange);
   visual.add(config, 'opacity', 0.1, 1.0, 0.05)
@@ -45,20 +45,17 @@ export function createGUI(config, callbacks) {
     .name('Transition Speed (s)')
     .onChange(callbacks.onTransitionSpeedChange);
 
-  // Edge settings
-  const edges = gui.addFolder('Edges');
-  edges.add(config, 'showEdges')
-    .name('Show k-NN Edges')
-    .onChange(callbacks.onShowEdgesChange);
-  edges.add(config, 'edgeThickness', 0.5, 10.0, 0.5)
-    .name('Edge Thickness')
-    .onChange(callbacks.onEdgeThicknessChange);
-  edges.add(config, 'edgeOpacity', 0.1, 1.0, 0.05)
-    .name('Edge Opacity')
-    .onChange(callbacks.onEdgeOpacityChange);
-  edges.add(config, 'edgeColorMode', ['Source', 'Gradient'])
-    .name('Color Mode')
-    .onChange(callbacks.onEdgeColorModeChange);
+  // Disc Plume settings
+  const plumeFolder = gui.addFolder('Disc Plume');
+  plumeFolder.add(config, 'plumeEnabled')
+    .name('Enable Plume')
+    .onChange(callbacks.onPlumeToggle);
+  plumeFolder.add(config, 'plumeRadius', 0.0, 30.0, 0.1)
+    .name('Plume Radius')
+    .onChange(callbacks.onPlumeRadiusChange).listen();
+  plumeFolder.add(config, 'plumeWidth', 0.1, 10.0, 0.1)
+    .name('Plume Width')
+    .onChange(callbacks.onPlumeWidthChange);
 
   // Camera
   const camera = gui.addFolder('Camera');
