@@ -49,12 +49,11 @@ export function createGUI(config, callbacks) {
   const discFolder = gui.addFolder('Disc Settings');
 
   const polyFolder = discFolder.addFolder('Z-Surface Polynomial');
-  polyFolder.add(config.polyConfig, 'a', -100.0, 100.0).name('Intercept').onChange(callbacks.onPolyChange);
-  polyFolder.add(config.polyConfig, 'x', -10.0, 10.0).name('X').onChange(callbacks.onPolyChange);
-  polyFolder.add(config.polyConfig, 'y', -10.0, 10.0).name('Y').onChange(callbacks.onPolyChange);
-  polyFolder.add(config.polyConfig, 'xx', -0.5, 0.5, 0.001).name('X²').onChange(callbacks.onPolyChange);
-  polyFolder.add(config.polyConfig, 'yy', -0.5, 0.5, 0.001).name('Y²').onChange(callbacks.onPolyChange);
-  polyFolder.add(config.polyConfig, 'xy', -1.0, 1.0, 0.001).name('XY').onChange(callbacks.onPolyChange);
+  polyFolder.add(config.polyConfig, 'x', -100.0, 100.0).name('X').onChange(callbacks.onPolyChange);
+  polyFolder.add(config.polyConfig, 'y', -100.0, 100.0).name('Y').onChange(callbacks.onPolyChange);
+  polyFolder.add(config.polyConfig, 'xx', -5.0, 5.0, 0.001).name('X²').onChange(callbacks.onPolyChange);
+  polyFolder.add(config.polyConfig, 'yy', -5.0, 5.0, 0.001).name('Y²').onChange(callbacks.onPolyChange);
+  polyFolder.add(config.polyConfig, 'xy', -5.0, 5.0, 0.001).name('XY').onChange(callbacks.onPolyChange);
   discFolder.close();
 
   // Camera

@@ -51,12 +51,11 @@ async function init() {
       autoRotateSpeed: 1.0,
       autoZoom: true,
       polyConfig: {
-        a: 26.549,
-        x: -0.2876,
-        y: -0.2696,
-        xx: -0.0004606,
-        yy: 0.0002108,
-        xy: 0.005996
+        x: -5.0,
+        y: -5.0,
+        xx: 0.1,
+        yy: 0.1,
+        xy: 0.2
       },
       cycleEnabled: true,
       cyclePreset: 'Custom',
@@ -245,7 +244,6 @@ async function init() {
         const circleGrid = generateCircleGridLayout(NUM_POINTS, guiConfig.colorscale, guiConfig.polyConfig);
         layoutManager.addLayout('Disc', circleGrid.positions, circleGrid.colors);
         
-        material.uniforms.uPolyA.value = guiConfig.polyConfig.a;
         material.uniforms.uPolyX.value = guiConfig.polyConfig.x;
         material.uniforms.uPolyY.value = guiConfig.polyConfig.y;
         material.uniforms.uPolyXX.value = guiConfig.polyConfig.xx;
@@ -328,7 +326,6 @@ async function init() {
       animator.cycleDuration = guiConfig.cycleDuration;
       animator.currentLayoutName = 'PCA';
 
-      material.uniforms.uPolyA.value = guiConfig.polyConfig.a;
       material.uniforms.uPolyX.value = guiConfig.polyConfig.x;
       material.uniforms.uPolyY.value = guiConfig.polyConfig.y;
       material.uniforms.uPolyXX.value = guiConfig.polyConfig.xx;

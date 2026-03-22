@@ -32,7 +32,6 @@ export const vertexShader = /* glsl */ `
 
 export const fragmentShader = /* glsl */ `
   uniform float uOpacity;
-  uniform float uPolyA;
   uniform float uPolyX;
   uniform float uPolyY;
   uniform float uPolyXX;

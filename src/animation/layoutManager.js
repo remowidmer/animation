@@ -173,7 +173,7 @@ export function generateCircleGridLayout(n, paletteName = 'plotly', polyConfig) 
   const paletteRGB = hexes.map(hexToRgb);
 
   // Default polynomial if none provided
-  const p = polyConfig || { a: 26.549, x: -0.2876, y: -0.2696, xx: -0.0004606, yy: 0.0002108, xy: 0.005996 };
+  const p = polyConfig || { x: -0.2876, y: -0.2696, xx: -0.0004606, yy: 0.0002108, xy: 0.005996 };
 
   // Pre-calculate Z-Surface min/max
   let minZ = Infinity, maxZ = -Infinity;
@@ -182,7 +182,7 @@ export function generateCircleGridLayout(n, paletteName = 'plotly', polyConfig) 
   for (let i = 0; i < n; i++) {
      const nx = (points[i].x / maxR) * 2.6; // scaleFactor is 2.6
      const ny = (points[i].y / maxR) * 2.6;
-     const z = p.a + p.x * nx + p.y * ny + p.xx * (nx * nx) + p.yy * (ny * ny) + p.xy * (nx * ny);
+     const z = p.x * nx + p.y * ny + p.xx * (nx * nx) + p.yy * (ny * ny) + p.xy * (nx * ny);
      zVals[i] = z;
      if (z < minZ) minZ = z;
      if (z > maxZ) maxZ = z;
