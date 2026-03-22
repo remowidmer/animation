@@ -145,14 +145,15 @@ export function generateHexGridLayout(n, clusterIds, numClusters) {
  * Points form a perfectly regular grid, cropped to a circle.
  */
 export function generateCircleGridLayout(n, paletteName = 'plotly', polyConfig) {
-  const positions = new Float32Array(n * 3);
-  const colors = new Float32Array(n * 3);
+  // Fallback if n is invalid
+  if (!n || n < 1) {
+    return { positions: new Float32Array(0), colors: new Float32Array(0), minZ: 0, maxZ: 0, zVals: new Float32Array(0) };
+  }
 
-  const gridSize = Math.ceil(Math.sqrt(n * 4 / Math.PI)) + 2; // generous bounds
+  const gridSize = Math.ceil(Math.sqrt(n * 4 / Math.PI)) + 2; 
   const points = [];
   const offset = (gridSize - 1) / 2;
 
-  // Generate dense rectangular grid
   for (let y = 0; y < gridSize; y++) {
     for (let x = 0; x < gridSize; x++) {
       const dx = x - offset;
@@ -163,61 +164,61 @@ export function generateCircleGridLayout(n, paletteName = 'plotly', polyConfig) 
     }
   }
 
-  // Sort by distance to center. Tie-break by angle so the outermost incomplete ring fills smoothly.
   points.sort((a, b) => (a.distSq - b.distSq) || (a.angle - b.angle));
 
-  // The radius of the outermost included point
-  const maxR = Math.sqrt(points[n - 1].distSq);
+  // Guard against points array being too short
+  const safeN = Math.min(n, points.length);
+  if (safeN === 0) return { positions: new Float32Array(0), colors: new Float32Array(0), minZ: 0, maxZ: 0, zVals: new Float32Array(0) };
+
+  const maxR = Math.sqrt(points[safeN - 1].distSq) || 1.0;
   
   const hexes = PALETTES[paletteName] || PALETTES.plotly;
   const paletteRGB = hexes.map(hexToRgb);
 
-  // Default polynomial if none provided
   const p = polyConfig || { x: -0.2876, y: -0.2696, xx: -0.0004606, yy: 0.0002108, xy: 0.005996 };
 
-  // Pre-calculate Z-Surface min/max
   let minZ = Infinity, maxZ = -Infinity;
-  const zVals = new Float32Array(n);
+  const zVals = new Float32Array(safeN);
   
-  for (let i = 0; i < n; i++) {
-     const nx = (points[i].x / maxR) * 2.6; // scaleFactor is 2.6
+  for (let i = 0; i < safeN; i++) {
+     const nx = (points[i].x / maxR) * 2.6;
      const ny = (points[i].y / maxR) * 2.6;
-     const z = p.x * nx + p.y * ny + p.xx * (nx * nx) + p.yy * (ny * ny) + p.xy * (nx * ny);
+     let z = (p.x || 0) * nx + (p.y || 0) * ny + (p.xx || 0) * (nx * nx) + (p.yy || 0) * (ny * ny) + (p.xy || 0) * (nx * ny);
+     if (isNaN(z)) z = 0;
      zVals[i] = z;
      if (z < minZ) minZ = z;
      if (z > maxZ) maxZ = z;
   }
 
-  for (let i = 0; i < n; i++) {
+  if (minZ === Infinity) { minZ = 0; maxZ = 0; }
+
+  const finalPositions = new Float32Array(safeN * 3);
+  const finalColors = new Float32Array(safeN * 3);
+
+  for (let i = 0; i < safeN; i++) {
     const pt = points[i];
-    // Scale points so the circle radius is much larger (2.6) for clear point separation
-    const scaleFactor = 2.6;
-    const nx = (pt.x / maxR) * scaleFactor;
-    const ny = (pt.y / maxR) * scaleFactor;
+    const nx = (pt.x / maxR) * 2.6;
+    const ny = (pt.y / maxR) * 2.6;
 
-    // Use Z-surface value for vertical displacement (Y-up in Three.js standard)
-    positions[i * 3]     = nx;
-    positions[i * 3 + 1] = zVals[i] * 0.05; // Scalloped/subtle height mapping
-    positions[i * 3 + 2] = ny;
-
-    let r, g, b;
+    finalPositions[i * 3]     = nx;
+    finalPositions[i * 3 + 1] = zVals[i] * 0.05;
+    finalPositions[i * 3 + 2] = ny;
 
     const t = (minZ === maxZ) ? 0.5 : (zVals[i] - minZ) / (maxZ - minZ);
     const scaled = t * (paletteRGB.length - 1);
-    const i0 = Math.floor(scaled);
-    const i1 = Math.min(i0 + 1, paletteRGB.length - 1);
-    const frac = scaled - i0;
+    const i0 = Math.max(0, Math.min(paletteRGB.length - 1, Math.floor(scaled)));
+    const i1 = Math.max(0, Math.min(paletteRGB.length - 1, Math.floor(scaled + 1)));
+    const frac = isNaN(scaled - i0) ? 0 : (scaled - i0);
 
-    r = paletteRGB[i0][0] * (1 - frac) + paletteRGB[i1][0] * frac;
-    g = paletteRGB[i0][1] * (1 - frac) + paletteRGB[i1][1] * frac;
-    b = paletteRGB[i0][2] * (1 - frac) + paletteRGB[i1][2] * frac;
+    const c0 = paletteRGB[i0] || [0.5, 0.5, 0.5];
+    const c1 = paletteRGB[i1] || [0.5, 0.5, 0.5];
 
-    colors[i * 3]     = r;
-    colors[i * 3 + 1] = g;
-    colors[i * 3 + 2] = b;
+    finalColors[i * 3]     = c0[0] * (1 - frac) + c1[0] * frac;
+    finalColors[i * 3 + 1] = c0[1] * (1 - frac) + c1[1] * frac;
+    finalColors[i * 3 + 2] = c0[2] * (1 - frac) + c1[2] * frac;
   }
 
-  return { positions, colors, minZ, maxZ, zVals };
+  return { positions: finalPositions, colors: finalColors, minZ, maxZ, zVals };
 }
 
 /**

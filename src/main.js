@@ -77,6 +77,7 @@ async function init() {
     await tick();
 
     const pcaPositions = computePCA(vectors, 3);
+
     const umapPositions = await computeUMAP(vectors, { nNeighbors: 15, minDist: 0.1 });
 
     // 3. Generate auxiliary layouts
