@@ -50,7 +50,6 @@ async function init() {
       autoRotate: true,
       autoRotateSpeed: 1.0,
       autoZoom: true,
-      discColorMode: 'Z-Surface',
       zSweepEnabled: false,
       zSweepThresh: 1.0,
       zSweepWidth: 0.1,
@@ -93,7 +92,7 @@ async function init() {
     const sphericalPositions = generateSphericalLayout(NUM_POINTS);
     const cubicGridPositions = generateCubicGridLayout(NUM_POINTS, clusterIds, numClusters);
     const hexGridPositions = generateHexGridLayout(NUM_POINTS, clusterIds, numClusters);
-    const circleGrid = generateCircleGridLayout(NUM_POINTS, guiConfig.colorscale, guiConfig.discColorMode, guiConfig.polyConfig);
+    const circleGrid = generateCircleGridLayout(NUM_POINTS, guiConfig.colorscale, guiConfig.polyConfig);
 
     // Flatten original cluster colors to be the base colors
     const baseColors = new Float32Array(NUM_POINTS * 3);
@@ -202,8 +201,8 @@ async function init() {
           layoutManager.baseColors[i * 3 + 2] = c[2];
         }
 
-        // Regenerate Circle Grid with continuous palette (respecting current mode)
-        const circleLayout = generateCircleGridLayout(NUM_POINTS, name, guiConfig.discColorMode, guiConfig.polyConfig);
+        // Regenerate Circle Grid with continuous palette
+        const circleLayout = generateCircleGridLayout(NUM_POINTS, name, guiConfig.polyConfig);
         layoutManager.addLayout('Disc', circleLayout.positions, circleLayout.colors);
         material.uniforms.uMinZ.value = circleLayout.minZ;
         material.uniforms.uMaxZ.value = circleLayout.maxZ;
@@ -251,15 +250,6 @@ async function init() {
         }
       },
       onTransitionSpeedChange: (v) => { animator.transitionSpeed = v; },
-      onDiscColorModeChange: (v) => {
-        const circleGrid = generateCircleGridLayout(NUM_POINTS, guiConfig.colorscale, v, guiConfig.polyConfig);
-        layoutManager.addLayout('Disc', circleGrid.positions, circleGrid.colors);
-        material.uniforms.uMinZ.value = circleGrid.minZ;
-        material.uniforms.uMaxZ.value = circleGrid.maxZ;
-        if (layoutManager.currentLayout === 'Disc') {
-            switchProjection('Disc');
-        }
-      },
       onZSweepToggle: (v) => {
         material.uniforms.uZSweepEnabled.value = (v && layoutManager.currentLayout === 'Disc') ? 1.0 : 0.0;
         if (v && layoutManager.currentLayout === 'Disc') animator.triggerZSweepAnimation();
@@ -267,7 +257,7 @@ async function init() {
       onZSweepThreshChange: (v) => { material.uniforms.uZSweepThresh.value = v; },
       onZSweepWidthChange: (v) => { material.uniforms.uZSweepWidth.value = v; },
       onPolyChange: () => {
-        const circleGrid = generateCircleGridLayout(NUM_POINTS, guiConfig.colorscale, guiConfig.discColorMode, guiConfig.polyConfig);
+        const circleGrid = generateCircleGridLayout(NUM_POINTS, guiConfig.colorscale, guiConfig.polyConfig);
         layoutManager.addLayout('Disc', circleGrid.positions, circleGrid.colors);
         
         material.uniforms.uPolyA.value = guiConfig.polyConfig.a;
@@ -280,7 +270,11 @@ async function init() {
         material.uniforms.uMaxZ.value = circleGrid.maxZ;
 
         if (layoutManager.currentLayout === 'Disc') {
+            // Hot update: very fast transition for parameter tweaks
+            const oldSpeed = animator.transitionSpeed;
+            animator.transitionSpeed = 0.2;
             switchProjection('Disc');
+            animator.transitionSpeed = oldSpeed;
         }
       },
       onAutoRotateChange: (v) => {

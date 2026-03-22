@@ -144,7 +144,7 @@ export function generateHexGridLayout(n, clusterIds, numClusters) {
  * Generate a circular grid on a flat rectangular plane.
  * Points form a perfectly regular grid, cropped to a circle.
  */
-export function generateCircleGridLayout(n, paletteName = 'plotly', colorMode = 'Angle') {
+export function generateCircleGridLayout(n, paletteName = 'plotly', polyConfig) {
   const positions = new Float32Array(n * 3);
   const colors = new Float32Array(n * 3);
 
@@ -172,20 +172,20 @@ export function generateCircleGridLayout(n, paletteName = 'plotly', colorMode = 
   const hexes = PALETTES[paletteName] || PALETTES.plotly;
   const paletteRGB = hexes.map(hexToRgb);
 
-  // Pre-calculate Z-Surface min/max if needed
+  // Default polynomial if none provided
+  const p = polyConfig || { a: 26.549, x: -0.2876, y: -0.2696, xx: -0.0004606, yy: 0.0002108, xy: 0.005996 };
+
+  // Pre-calculate Z-Surface min/max
   let minZ = Infinity, maxZ = -Infinity;
   const zVals = new Float32Array(n);
   
-  if (colorMode === 'Z-Surface') {
-    for (let i = 0; i < n; i++) {
-       const nx = (points[i].x / maxR) * 2.6; // scaleFactor is 2.6
-       const ny = (points[i].y / maxR) * 2.6;
-       // Given surface function
-       const z = 26.549 - 0.2876 * nx - 0.2696 * ny - 4.606e-4 * (nx * nx) + 2.108e-4 * (ny * ny) + 5.996e-3 * nx * ny;
-       zVals[i] = z;
-       if (z < minZ) minZ = z;
-       if (z > maxZ) maxZ = z;
-    }
+  for (let i = 0; i < n; i++) {
+     const nx = (points[i].x / maxR) * 2.6; // scaleFactor is 2.6
+     const ny = (points[i].y / maxR) * 2.6;
+     const z = p.a + p.x * nx + p.y * ny + p.xx * (nx * nx) + p.yy * (ny * ny) + p.xy * (nx * ny);
+     zVals[i] = z;
+     if (z < minZ) minZ = z;
+     if (z > maxZ) maxZ = z;
   }
 
   for (let i = 0; i < n; i++) {
@@ -195,51 +195,26 @@ export function generateCircleGridLayout(n, paletteName = 'plotly', colorMode = 
     const nx = (pt.x / maxR) * scaleFactor;
     const ny = (pt.y / maxR) * scaleFactor;
 
-    // Lay perfectly flat on the XZ plane (floor) so we can calculate exact inclination angles
+    // Use Z-surface value for vertical displacement (Y-up in Three.js standard)
     positions[i * 3]     = nx;
-    positions[i * 3 + 1] = 0;
+    positions[i * 3 + 1] = zVals[i] * 0.05; // Scalloped/subtle height mapping
     positions[i * 3 + 2] = ny;
 
     let r, g, b;
 
-    if (colorMode === 'Z-Surface') {
-      const t = (minZ === maxZ) ? 0.5 : (zVals[i] - minZ) / (maxZ - minZ);
-      const scaled = t * (paletteRGB.length - 1);
-      const i0 = Math.floor(scaled);
-      const i1 = Math.min(i0 + 1, paletteRGB.length - 1);
-      const frac = scaled - i0;
+    const t = (minZ === maxZ) ? 0.5 : (zVals[i] - minZ) / (maxZ - minZ);
+    const scaled = t * (paletteRGB.length - 1);
+    const i0 = Math.floor(scaled);
+    const i1 = Math.min(i0 + 1, paletteRGB.length - 1);
+    const frac = scaled - i0;
 
-      r = paletteRGB[i0][0] * (1 - frac) + paletteRGB[i1][0] * frac;
-      g = paletteRGB[i0][1] * (1 - frac) + paletteRGB[i1][1] * frac;
-      b = paletteRGB[i0][2] * (1 - frac) + paletteRGB[i1][2] * frac;
+    r = paletteRGB[i0][0] * (1 - frac) + paletteRGB[i1][0] * frac;
+    g = paletteRGB[i0][1] * (1 - frac) + paletteRGB[i1][1] * frac;
+    b = paletteRGB[i0][2] * (1 - frac) + paletteRGB[i1][2] * frac;
 
-      colors[i * 3]     = r;
-      colors[i * 3 + 1] = g;
-      colors[i * 3 + 2] = b;
-    } else {
-      // Default: Angle
-      const angle = pt.angle;
-      const radius = Math.sqrt(nx * nx + ny * ny) / scaleFactor;
-
-      // Smoothly and seamlessly interpolate the continuous color wheel from discrete palette
-      const t = (angle + Math.PI) / (2 * Math.PI);
-      const scaled = t * paletteRGB.length;
-      const i0 = Math.floor(scaled) % paletteRGB.length;
-      const i1 = (i0 + 1) % paletteRGB.length;
-      const frac = scaled - Math.floor(scaled);
-      
-      // Apply spherical Cosine Easing so the pie-slice grid lines completely vanish into a smooth aurora
-      const smoothFrac = (1.0 - Math.cos(frac * Math.PI)) / 2.0;
-      
-      r = paletteRGB[i0][0] * (1 - smoothFrac) + paletteRGB[i1][0] * smoothFrac;
-      g = paletteRGB[i0][1] * (1 - smoothFrac) + paletteRGB[i1][1] * smoothFrac;
-      b = paletteRGB[i0][2] * (1 - smoothFrac) + paletteRGB[i1][2] * smoothFrac;
-
-      // Mix toward white in the center
-      colors[i * 3]     = r * radius + (1.0 - radius);
-      colors[i * 3 + 1] = g * radius + (1.0 - radius);
-      colors[i * 3 + 2] = b * radius + (1.0 - radius);
-    }
+    colors[i * 3]     = r;
+    colors[i * 3 + 1] = g;
+    colors[i * 3 + 2] = b;
   }
 
   return { positions, colors, minZ, maxZ, zVals };

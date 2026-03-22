@@ -47,9 +47,6 @@ export function createGUI(config, callbacks) {
 
   // Disc Settings
   const discFolder = gui.addFolder('Disc Settings');
-  discFolder.add(config, 'discColorMode', ['Angle', 'Z-Surface'])
-    .name('Color Map')
-    .onChange(callbacks.onDiscColorModeChange);
   discFolder.add(config, 'zSweepEnabled')
     .name('Enable Z Sweep')
     .onChange(callbacks.onZSweepToggle);
