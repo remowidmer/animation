@@ -59,12 +59,6 @@ export class Animator {
     this.onFrame = null;
     this.onTransitionComplete = null;
 
-    // Plume Animation
-    this.guiConfig = null;
-    this.plumeAnimating = false;
-    this.plumeProgress = 0.0;
-    this.plumeDuration = 2.0;
-
     // Color transitions option
     this.colorTransitions = true;
 
@@ -100,20 +94,6 @@ export class Animator {
     this.guiConfig = config;
   }
 
-  triggerPlumeAnimation() {
-    this.plumeAnimating = true;
-    this.plumeProgress = 0.0;
-  }
-
-  setGuiConfig(config) {
-    this.guiConfig = config;
-  }
-
-  triggerPlumeAnimation() {
-    this.plumeAnimating = true;
-    this.plumeProgress = 0.0;
-  }
-
   transitionTo(layout, baseColors) {
     let colors = null;
 
@@ -147,20 +127,6 @@ export class Animator {
 
     // Update time uniform
     this.material.uniforms.uTime.value = elapsed;
-
-    // Plume Animation
-    if (this.plumeAnimating) {
-      this.plumeProgress += dt / this.plumeDuration;
-      if (this.plumeProgress >= 1.0) {
-        this.plumeProgress = 1.0;
-        this.plumeAnimating = false;
-      }
-      const currentRadius = this.plumeProgress * 30.0;
-      if (this.guiConfig) {
-        this.guiConfig.plumeRadius = currentRadius;
-      }
-      this.material.uniforms.uPlumeRadius.value = currentRadius;
-    }
 
     // Handle transition
     if (this.isTransitioning) {

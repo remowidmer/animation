@@ -50,9 +50,6 @@ async function init() {
       autoRotate: true,
       autoRotateSpeed: 1.0,
       autoZoom: true,
-      zSweepEnabled: false,
-      zSweepThresh: 1.0,
-      zSweepWidth: 0.1,
       polyConfig: {
         a: 26.549,
         x: -0.2876,
@@ -149,12 +146,6 @@ async function init() {
       animator.currentLayoutName = name;
       animator.transitionTo(layout, layoutManager.baseColors);
       projectionEl.textContent = name;
-      
-      // Z-Sweep is exclusively for Disc
-      material.uniforms.uZSweepEnabled.value = (guiConfig.zSweepEnabled && name === 'Disc') ? 1.0 : 0.0;
-      if (guiConfig.zSweepEnabled && name === 'Disc') {
-        animator.triggerZSweepAnimation();
-      }
     }
 
     function rebuildCycleList() {
@@ -250,12 +241,6 @@ async function init() {
         }
       },
       onTransitionSpeedChange: (v) => { animator.transitionSpeed = v; },
-      onZSweepToggle: (v) => {
-        material.uniforms.uZSweepEnabled.value = (v && layoutManager.currentLayout === 'Disc') ? 1.0 : 0.0;
-        if (v && layoutManager.currentLayout === 'Disc') animator.triggerZSweepAnimation();
-      },
-      onZSweepThreshChange: (v) => { material.uniforms.uZSweepThresh.value = v; },
-      onZSweepWidthChange: (v) => { material.uniforms.uZSweepWidth.value = v; },
       onPolyChange: () => {
         const circleGrid = generateCircleGridLayout(NUM_POINTS, guiConfig.colorscale, guiConfig.polyConfig);
         layoutManager.addLayout('Disc', circleGrid.positions, circleGrid.colors);
@@ -343,10 +328,6 @@ async function init() {
       animator.cycleDuration = guiConfig.cycleDuration;
       animator.currentLayoutName = 'PCA';
 
-      material.uniforms.uZSweepEnabled.value = (guiConfig.zSweepEnabled && guiConfig.projection === 'Disc') ? 1.0 : 0.0;
-      material.uniforms.uZSweepThresh.value = guiConfig.zSweepThresh;
-      material.uniforms.uZSweepWidth.value = guiConfig.zSweepWidth;
-      
       material.uniforms.uPolyA.value = guiConfig.polyConfig.a;
       material.uniforms.uPolyX.value = guiConfig.polyConfig.x;
       material.uniforms.uPolyY.value = guiConfig.polyConfig.y;

@@ -32,9 +32,6 @@ export const vertexShader = /* glsl */ `
 
 export const fragmentShader = /* glsl */ `
   uniform float uOpacity;
-  uniform float uZSweepEnabled;
-  uniform float uZSweepThresh;
-  uniform float uZSweepWidth;
   uniform float uPolyA;
   uniform float uPolyX;
   uniform float uPolyY;
@@ -59,18 +56,6 @@ export const fragmentShader = /* glsl */ `
 
     vec3 finalColor = vColor;
 
-    if (uZSweepEnabled > 0.5) {
-        float nx = vPos.x;
-        float ny = vPos.z;
-        float zVal = uPolyA + uPolyX * nx + uPolyY * ny + uPolyXX * (nx * nx) + uPolyYY * (ny * ny) + uPolyXY * (nx * ny);
-        float normZ = (zVal - uMinZ) / max(uMaxZ - uMinZ, 0.0001);
-        
-        float sweepAlpha = 1.0 - smoothstep(uZSweepThresh - uZSweepWidth, uZSweepThresh, normZ);
-        vec3 grey = vec3(0.3, 0.3, 0.3);
-        finalColor = mix(grey, finalColor, sweepAlpha);
-    }
-
-    // Apply basic color and alpha
     gl_FragColor = vec4(finalColor, alpha);
   }
 `;

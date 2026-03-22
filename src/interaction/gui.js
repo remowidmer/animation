@@ -47,23 +47,14 @@ export function createGUI(config, callbacks) {
 
   // Disc Settings
   const discFolder = gui.addFolder('Disc Settings');
-  discFolder.add(config, 'zSweepEnabled')
-    .name('Enable Z Sweep')
-    .onChange(callbacks.onZSweepToggle);
-  discFolder.add(config, 'zSweepThresh', 0.0, 1.0, 0.01)
-    .name('Z Threshold')
-    .onChange(callbacks.onZSweepThreshChange).listen();
-  discFolder.add(config, 'zSweepWidth', 0.01, 0.5, 0.01)
-    .name('Z Sweep Width')
-    .onChange(callbacks.onZSweepWidthChange);
 
   const polyFolder = discFolder.addFolder('Z-Surface Polynomial');
-  polyFolder.add(config.polyConfig, 'a', 0.0, 50.0).name('Intercept').onChange(callbacks.onPolyChange);
-  polyFolder.add(config.polyConfig, 'x', -1.0, 1.0).name('X').onChange(callbacks.onPolyChange);
-  polyFolder.add(config.polyConfig, 'y', -1.0, 1.0).name('Y').onChange(callbacks.onPolyChange);
-  polyFolder.add(config.polyConfig, 'xx', -0.01, 0.01).name('X²').onChange(callbacks.onPolyChange);
-  polyFolder.add(config.polyConfig, 'yy', -0.01, 0.01).name('Y²').onChange(callbacks.onPolyChange);
-  polyFolder.add(config.polyConfig, 'xy', -0.05, 0.05).name('XY').onChange(callbacks.onPolyChange);
+  polyFolder.add(config.polyConfig, 'a', -100.0, 100.0).name('Intercept').onChange(callbacks.onPolyChange);
+  polyFolder.add(config.polyConfig, 'x', -10.0, 10.0).name('X').onChange(callbacks.onPolyChange);
+  polyFolder.add(config.polyConfig, 'y', -10.0, 10.0).name('Y').onChange(callbacks.onPolyChange);
+  polyFolder.add(config.polyConfig, 'xx', -0.5, 0.5, 0.001).name('X²').onChange(callbacks.onPolyChange);
+  polyFolder.add(config.polyConfig, 'yy', -0.5, 0.5, 0.001).name('Y²').onChange(callbacks.onPolyChange);
+  polyFolder.add(config.polyConfig, 'xy', -1.0, 1.0, 0.001).name('XY').onChange(callbacks.onPolyChange);
   discFolder.close();
 
   // Camera
