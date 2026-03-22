@@ -49,7 +49,7 @@ async function init() {
       umapColorMorph: false,
       transitionSpeed: 1.5,
       showEdges: false,
-      edgeThickness: 2.0,
+      edgeThickness: 0.5,
       edgeOpacity: 0.4,
       edgeColorMode: 'Gradient',
       autoRotate: true,
